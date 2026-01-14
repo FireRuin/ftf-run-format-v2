@@ -139,8 +139,18 @@ print("setting up run to desired run format...")
 run_stats_datas = []
 special_case = ["SkittlesCat", "Jenna_0134", "[ph]svxsul"]
 obsolete_run = False #whether include obsolete runs or not
-K1, K2 = 150, 20
+if obsolete_run == False:
+    for run in all_runs:
+        for i in all_runs:
+            count = 0
+            if i["values"] == run["values"] and i["times"]["primary_t"] > run["times"]["primary_t"]:
+                for j in i["players"]:
+                    if j in run["players"]:
+                        count += 1
+                if count == len(run["players"]):
+                    all_runs.remove(i)
 
+K1, K2 = 150, 20
 for run in all_runs:
     ftf_run = {"name" : "name","runid" : "id","gametype": 0,"time" : 900,"placement" : 0,"total_run_in_category" : 0,"the_runners" : [],"random_count" : 0,"wr_val" : 0,"wr_value_per_person" : 0,"score" : 0,"link" : "link"}
     count = 0
@@ -214,11 +224,6 @@ for run in run_stats_datas:
         run['score'] = 1.5*((run['total_run_in_category']/run['placement'] + ((K2*RD)/run['time'])))
     #print(run, run_stats_datas.index(run))
 
-if obsolete_run == False:
-    for run in run_stats_datas:
-        for i in run_stats_datas:
-            if i["name"] == run["name"] and i["the_runners"] == run["the_runners"] and i["time"] > run["time"]:
-                run_stats_datas.remove(i)
 #print(run_stats_datas[91])
 print("done ordering runs", f"({time.perf_counter() - start}s)")
 
