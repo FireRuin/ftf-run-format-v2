@@ -1,4 +1,3 @@
-from speedruncomapi import Game, Leaderboard
 import time, datetime
 import asyncio
 import aiohttp
@@ -94,6 +93,7 @@ if __name__ == "__main__":
         else :
             player_nation_list.append(item["data"]["location"]["country"]["names"]["international"])
     #print(len(player_id_list), len(player_name_list))
+    #print(player_nation_list)
     print("done unique username info", f"({time.perf_counter() - start}s)")
 
 print("getting run count in all categories...")
@@ -138,7 +138,9 @@ print("done getting run count", f"({time.perf_counter() - start}s)")
 print("setting up run to desired run format...")
 run_stats_datas = []
 special_case = ["SkittlesCat", "Jenna_0134", "[ph]svxsul"]
+obsolete_run = False #whether include obsolete runs or not
 K1, K2 = 150, 20
+
 for run in all_runs:
     ftf_run = {"name" : "name","runid" : "id","gametype": 0,"time" : 900,"placement" : 0,"total_run_in_category" : 0,"the_runners" : [],"random_count" : 0,"wr_val" : 0,"wr_value_per_person" : 0,"score" : 0,"link" : "link"}
     count = 0
@@ -207,10 +209,16 @@ for run in run_stats_datas:
         run['wr_value_per_person'] = (3/PL)*(1-run["gametype"]) + 3*(run["gametype"])
     RD = run['random_count']
     if run["gametype"] == 0:
-        run['score'] = run['score'] = (run['total_run_in_category']/run['placement']) + ((K1 - 10*PL)/run['time']) + (RD + 1)/5
+        run['score'] = (run['total_run_in_category']/run['placement']) + ((K1 - 10*PL)/run['time']) + (RD + 1)/5
     else:
-        run['score'] = (run['total_run_in_category']/run['placement'] + ((K2*RD)/run['time']))
+        run['score'] = 1.5*((run['total_run_in_category']/run['placement'] + ((K2*RD)/run['time'])))
     #print(run, run_stats_datas.index(run))
+
+if obsolete_run == False:
+    for run in run_stats_datas:
+        for i in run_stats_datas:
+            if i["name"] == run["name"] and i["the_runners"] == run["the_runners"] and i["time"] > run["time"]:
+                run_stats_datas.remove(i)
 #print(run_stats_datas[91])
 print("done ordering runs", f"({time.perf_counter() - start}s)")
 
@@ -218,9 +226,9 @@ print("setting up player own stat...")
 player_stats_datas = []
 
 for i in range(0, len(player_name_list + special_case)):
-    player_stats = {"name" : "name","country" : "country","total_wr" : 0,"survivor_wr" : 0,"beast_wr" : 0,"wr_value" : 0,"score" : 0,"most_value_run" : "run_name"}
+    player_stats = {"name" : "name","country" : "country","total_run" : 0,"total_wr" : 0,"survivor_wr" : 0,"beast_wr" : 0,"wr_value" : 0,"score" : 0,"most_value_run" : "run_name"}
     count = 0
-    if i in player_name_list:
+    if i < len(player_name_list):
         player_stats['name'] = player_name_list[i]
         player_stats['country'] = player_nation_list[i]
     else:
@@ -228,6 +236,7 @@ for i in range(0, len(player_name_list + special_case)):
         player_stats['country'] = "None"
     for j in run_stats_datas:
         if (player_name_list + special_case)[i] in j["the_runners"]:
+            player_stats['total_run'] += 1
             player_stats['total_wr'] += j["wr_val"]
             player_stats['wr_value'] += j['wr_value_per_person']
             if j["placement"] == 1:
@@ -240,7 +249,7 @@ for i in range(0, len(player_name_list + special_case)):
 #print(player_stats_datas)
 print("done setting all players", f"({time.perf_counter() - start}s)")
 
-print("extracting datas")
+print("extracting datas...")
 placeholder_list = []
 placeholder_list_2 = []
 #ftf_run = {"name" : "name","runid" : "id","gametype": 0,"time" : 900,"placement" : 0,"total_run_in_category" : 0,"the_runners" : [],"random_count" : 0,"wr_val" : 0,"wr_value_per_person" : 0,"score" : 0,"link" : "link"}
@@ -263,11 +272,12 @@ for i in run_stats_datas:
     data['Run link'] = i["link"]
     placeholder_list.append(data)
 
-#player_stats = {"name" : "name","country" : "country","total_wr" : 0,"survivor_wr" : 0,"beast_wr" : 0,"wr_value" : 0,"score" : 0,"most_value_run" : "run_name"}
+#player_stats = {"name" : "name","country" : "country","total_run" : 0,"total_wr" : 0,"survivor_wr" : 0,"beast_wr" : 0,"wr_value" : 0,"score" : 0,"most_value_run" : "run_name"}
 for i in player_stats_datas:
-    data = {"Player Name" : "","Nationality" : "","Total WR(s)" : 0,"Survivor WR(s)" : 0,"Beast WR(s)" : 0,"WR Value" : 0,"Total Score" : 0,"Most value run" : ""}
+    data = {"Player Name" : "","Nationality" : "","Total Run(s)" : 0,"Total WR(s)" : 0,"Survivor WR(s)" : 0,"Beast WR(s)" : 0,"WR Value" : 0,"Total Score" : 0,"Most value run" : ""}
     data['Player Name'] = i["name"]
     data['Nationality'] = i["country"]
+    data['Total Run(s)'] = i["total_run"]
     data['Total WR(s)'] = i["total_wr"]
     data['Survivor WR(s)'] = i["survivor_wr"]
     data['Beast WR(s)'] = i["beast_wr"]
@@ -291,7 +301,7 @@ for player in placeholder_list_2:
     sheet_2.append(list(player.values()))
 
 cdate = datetime.datetime.now()
-cdatestr = cdate.strftime("%B%d%Y %I%M%S")
+cdatestr = cdate.strftime("%I%M%S %B%d%Y")
 
 wb.save(f"DATA {cdatestr}.xlsx")
 print("Successfully created excel file", f"({time.perf_counter() - start}s)")
