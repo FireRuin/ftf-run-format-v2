@@ -9,3 +9,4 @@ You use Python 3
 - This include FSSv2, name, link, etc.. of the game
 - Only use this for Flee The Facility Speedrun !!!
 
+The backup is for archiving purpose, don't use any of them as they are slow and broken with no true result
